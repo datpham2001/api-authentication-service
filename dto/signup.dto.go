@@ -2,8 +2,8 @@ package dto
 
 type UserSignUpRequest struct {
 	User struct {
-		Email    string `json:"email,omitempty"`
-		Username string `json:"username,omitempty"`
-		Password string `json:"password,omitempty"`
-	} `json:"user"`
+		Email    string `json:"email" validate:"required"`
+		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
+	} `json:"user" validate:"required"`
 }

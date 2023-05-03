@@ -36,7 +36,7 @@ func ValidateEmail(email string) bool {
 		+ At least 1 special character
 */
 func ValidatePassword(password string) bool {
-	const regex = "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$"
+	const regex = "^[a_zA_Z@#$\\d].{8,}$"
 
 	ok, _ := regexp.MatchString(regex, password)
 	return ok

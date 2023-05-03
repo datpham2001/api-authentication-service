@@ -15,19 +15,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const (
-	AUTH_COLLECTION_NAME = "realworld_authentication"
-)
-
 func NewAuthRepository(db *mongo.Database) AuthRepository {
 	r := &Instance{
-		db:     db,
-		DBName: db.Name(),
-
-		coll:           db.Collection(AUTH_COLLECTION_NAME),
+		ColName:        "authentication",
 		TemplateObject: &model.User{},
 	}
 
+	r.ApplyDatabase(db)
 	return r
 }
 
@@ -105,7 +99,7 @@ func (r *Instance) Login(input *dto.UserLoginRequest) *helper.APIResponse {
 		}
 	}
 
-	accessToken, err := helper.GenerateJWT(user.UserID, config.AppConfig.AccessTokenExpiredIn, config.AppConfig.AccessTokenPrivateKey)
+	accessToken, err := helper.GenerateJWT(user.UserID, config.AppConfig.AccessTokenExpiredIn, config.AppConfig.AccessTokenKey)
 	if err != nil {
 		return &helper.APIResponse{
 			Code:    http.StatusBadRequest,
@@ -115,7 +109,7 @@ func (r *Instance) Login(input *dto.UserLoginRequest) *helper.APIResponse {
 	}
 	user.AccessToken = *accessToken.Token
 
-	refreshToken, err := helper.GenerateJWT(user.UserID, config.AppConfig.RefreshTokenExpiredIn, config.AppConfig.RefreshTokenPrivateKey)
+	refreshToken, err := helper.GenerateJWT(user.UserID, config.AppConfig.RefreshTokenExpiredIn, config.AppConfig.RefreshTokenKey)
 	if err != nil {
 		return &helper.APIResponse{
 			Code:    http.StatusBadRequest,
@@ -139,7 +133,7 @@ func (r *Instance) Login(input *dto.UserLoginRequest) *helper.APIResponse {
 }
 
 func (r *Instance) RefreshToken(input *dto.RefreshTokenRequest) *helper.APIResponse {
-	token, err := helper.ValidateToken(input.RefreshToken, config.AppConfig.RefreshTokenPublicKey)
+	token, err := helper.ValidateToken(input.RefreshToken, config.AppConfig.RefreshTokenKey)
 	if err != nil {
 		return &helper.APIResponse{
 			Code:    http.StatusBadRequest,
@@ -153,7 +147,7 @@ func (r *Instance) RefreshToken(input *dto.RefreshTokenRequest) *helper.APIRespo
 		return resp
 	}
 
-	accessToken, err := helper.GenerateJWT(token.UserID, config.AppConfig.AccessTokenExpiredIn, config.AppConfig.AccessTokenPrivateKey)
+	accessToken, err := helper.GenerateJWT(token.UserID, config.AppConfig.AccessTokenExpiredIn, config.AppConfig.AccessTokenKey)
 	if err != nil {
 		return &helper.APIResponse{
 			Code:    http.StatusInternalServerError,
@@ -162,7 +156,7 @@ func (r *Instance) RefreshToken(input *dto.RefreshTokenRequest) *helper.APIRespo
 		}
 	}
 
-	refreshToken, err := helper.GenerateJWT(token.UserID, config.AppConfig.RefreshTokenExpiredIn, config.AppConfig.RefreshTokenPrivateKey)
+	refreshToken, err := helper.GenerateJWT(token.UserID, config.AppConfig.RefreshTokenExpiredIn, config.AppConfig.RefreshTokenKey)
 	if err != nil {
 		return &helper.APIResponse{
 			Code:    http.StatusInternalServerError,
@@ -230,7 +224,7 @@ func (r *Instance) LoginWithGoogle(input *dto.GoogleLoginRequest) *helper.APIRes
 		userData = userResp.Data.([]*model.User)[0]
 	}
 
-	accessToken, err := helper.GenerateJWT(userData.UserID, config.AppConfig.AccessTokenExpiredIn, config.AppConfig.AccessTokenPrivateKey)
+	accessToken, err := helper.GenerateJWT(userData.UserID, config.AppConfig.AccessTokenExpiredIn, config.AppConfig.AccessTokenKey)
 	if err != nil {
 		return &helper.APIResponse{
 			Code:    http.StatusInternalServerError,

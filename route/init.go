@@ -21,10 +21,10 @@ func New() *echo.Echo {
 		LogResponseSize: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			logger.Info().
-				Str("URI", v.URI).
+				Str("uri", v.URI).
 				Int("status", v.Status).
+				Int64("reponseSize", v.ResponseSize).
 				Msg("request")
-
 			return nil
 		},
 	}))

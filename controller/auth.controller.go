@@ -10,16 +10,19 @@ import (
 	"realworld-authentication/repository"
 	"realworld-authentication/utils"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
 type authController struct {
 	Repository repository.AuthRepository
+	Validator  *validator.Validate
 }
 
-func NewAuthController(repo repository.AuthRepository) *authController {
+func NewAuthController(repo repository.AuthRepository, validator *validator.Validate) *authController {
 	return &authController{
 		Repository: repo,
+		Validator:  validator,
 	}
 }
 
@@ -31,66 +34,46 @@ func (h *authController) SignUp(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &helper.APIResponse{
 			Code:      http.StatusBadRequest,
 			Status:    helper.APIStatus.Invalid,
-			Message:   "Cannot parse input data. " + err.Error(),
+			Message:   "Bad request. Error: " + err.Error(),
 			ErrorCode: string(enum.ErrorCodeInvalid.ParseData),
 		})
 	}
 
-	switch input.User.Email {
-	case "":
+	err = h.Validator.Struct(&input)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, &helper.APIResponse{
 			Code:      http.StatusBadRequest,
 			Status:    helper.APIStatus.Invalid,
-			Message:   "User email is not empty",
-			ErrorCode: string(enum.ErrorCodeRequired.Email),
+			Message:   "Validate error: " + err.Error(),
+			ErrorCode: string(enum.ErrorCodeInvalid.InvalidFields),
 		})
-	default:
-		if !utils.ValidateEmail(input.User.Email) {
-			return c.JSON(http.StatusBadRequest, &helper.APIResponse{
-				Code:      http.StatusBadRequest,
-				Status:    helper.APIStatus.Invalid,
-				Message:   "User email is invalid format",
-				ErrorCode: string(enum.ErrorCodeInvalid.Email),
-			})
-		}
 	}
 
-	switch input.User.Username {
-	case "":
+	if !utils.ValidateEmail(input.User.Email) {
 		return c.JSON(http.StatusBadRequest, &helper.APIResponse{
 			Code:      http.StatusBadRequest,
 			Status:    helper.APIStatus.Invalid,
-			Message:   "Username is not empty",
-			ErrorCode: string(enum.ErrorCodeRequired.Username),
+			Message:   "User email is invalid format",
+			ErrorCode: string(enum.ErrorCodeInvalid.Email),
 		})
-	default:
-		if !utils.ValidateUsername(input.User.Username) {
-			return c.JSON(http.StatusBadRequest, &helper.APIResponse{
-				Code:      http.StatusBadRequest,
-				Status:    helper.APIStatus.Invalid,
-				Message:   "Username is invalid format",
-				ErrorCode: string(enum.ErrorCodeInvalid.Username),
-			})
-		}
 	}
 
-	switch input.User.Password {
-	case "":
+	if !utils.ValidateUsername(input.User.Username) {
 		return c.JSON(http.StatusBadRequest, &helper.APIResponse{
 			Code:      http.StatusBadRequest,
 			Status:    helper.APIStatus.Invalid,
-			Message:   "User password is not empty",
-			ErrorCode: string(enum.ErrorCodeRequired.Password),
+			Message:   "Username is invalid format",
+			ErrorCode: string(enum.ErrorCodeInvalid.Username),
 		})
-	default:
-		if !utils.ValidatePassword(input.User.Password) {
-			return c.JSON(http.StatusBadRequest, &helper.APIResponse{
-				Code:      http.StatusBadRequest,
-				Status:    helper.APIStatus.Invalid,
-				Message:   "User password is invalid format",
-				ErrorCode: string(enum.ErrorCodeInvalid.Password),
-			})
-		}
+	}
+
+	if !utils.ValidatePassword(input.User.Password) {
+		return c.JSON(http.StatusBadRequest, &helper.APIResponse{
+			Code:      http.StatusBadRequest,
+			Status:    helper.APIStatus.Invalid,
+			Message:   "User password is invalid format",
+			ErrorCode: string(enum.ErrorCodeInvalid.Password),
+		})
 	}
 
 	userSignupResponse := h.Repository.SignUp(&input)
@@ -110,21 +93,13 @@ func (h *authController) Login(c echo.Context) error {
 		})
 	}
 
-	if input.User.Email == "" {
+	err = h.Validator.Struct(&input)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, &helper.APIResponse{
 			Code:      http.StatusBadRequest,
 			Status:    helper.APIStatus.Invalid,
-			Message:   "Email must not be empty",
-			ErrorCode: string(enum.ErrorCodeRequired.Email),
-		})
-	}
-
-	if input.User.Password == "" {
-		return c.JSON(http.StatusBadRequest, &helper.APIResponse{
-			Code:      http.StatusBadRequest,
-			Status:    helper.APIStatus.Invalid,
-			Message:   "Password must not be empty",
-			ErrorCode: string(enum.ErrorCodeRequired.Password),
+			Message:   "Validate error: " + err.Error(),
+			ErrorCode: string(enum.ErrorCodeInvalid.InvalidFields),
 		})
 	}
 

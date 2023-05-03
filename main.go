@@ -10,6 +10,7 @@ import (
 	"realworld-authentication/route"
 	"realworld-authentication/storage/db"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -30,10 +31,10 @@ func init() {
 }
 
 func main() {
-
 	// init instances
+	validator := validator.New()
 	repository := repository.NewAuthRepository(db.Client.Database(config.AppConfig.DBName))
-	controller := controller.NewAuthController(repository)
+	controller := controller.NewAuthController(repository, validator)
 
 	// setup api server & its middleware
 	router := server.Group("/api")
@@ -43,7 +44,7 @@ func main() {
 
 	authRouter := router.Group("/auth")
 
-	authRouter.POST("/register", controller.SignUp)
+	authRouter.POST("/signup", controller.SignUp)
 	authRouter.POST("/login", controller.Login)
 	authRouter.POST("/token/refresh", controller.RefreshToken, middleware.AuthMiddleware)
 

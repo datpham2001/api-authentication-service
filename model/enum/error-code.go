@@ -4,10 +4,11 @@ type ErrorCodeEnumValue string
 
 type (
 	errorCodeInvalidEnum struct {
-		ParseData ErrorCodeEnumValue
-		Email     ErrorCodeEnumValue
-		Username  ErrorCodeEnumValue
-		Password  ErrorCodeEnumValue
+		ParseData     ErrorCodeEnumValue
+		Email         ErrorCodeEnumValue
+		Username      ErrorCodeEnumValue
+		Password      ErrorCodeEnumValue
+		InvalidFields ErrorCodeEnumValue
 	}
 
 	errorCodeRequiredEnum struct {
@@ -38,10 +39,11 @@ type (
 
 var (
 	ErrorCodeInvalid = &errorCodeInvalidEnum{
-		ParseData: "INVALID_PARSE_DATA",
-		Email:     "INVALID_EMAIL_FORMAT",
-		Username:  "INVALID_USERNAME_FORMAT",
-		Password:  "INVALID_PASSWORD_FORMAT",
+		ParseData:     "INVALID_PARSE_DATA",
+		Email:         "INVALID_EMAIL_FORMAT",
+		Username:      "INVALID_USERNAME_FORMAT",
+		Password:      "INVALID_PASSWORD_FORMAT",
+		InvalidFields: "INVALID_FIELDS",
 	}
 
 	ErrorCodeRequired = &errorCodeRequiredEnum{

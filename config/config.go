@@ -14,14 +14,12 @@ type appConfig struct {
 	Port     int64  `mapstructure:"port"`
 
 	// jwt key information
-	AccessTokenPrivateKey  string        `mapstructure:"access_token_private_key"`
-	AccessTokenPublicKey   string        `mapstructure:"access_token_public_key"`
-	AccessTokenExpiredIn   time.Duration `mapstructure:"access_token_expired_in"`
-	AccessTokenMaxAge      int64         `mapstructure:"access_token_max_age"`
-	RefreshTokenPrivateKey string        `mapstructure:"refresh_token_private_key"`
-	RefreshTokenPublicKey  string        `mapstructure:"refresh_token_public_key"`
-	RefreshTokenExpiredIn  time.Duration `mapstructure:"refresh_token_expired_in"`
-	RefreshTokenMaxAge     int64         `mapstructure:"refresh_token_max_age"`
+	AccessTokenKey        string        `mapstructure:"access_token_key"`
+	AccessTokenExpiredIn  time.Duration `mapstructure:"access_token_expired_in"`
+	AccessTokenMaxAge     int64         `mapstructure:"access_token_max_age"`
+	RefreshTokenKey       string        `mapstructure:"refresh_token_key"`
+	RefreshTokenExpiredIn time.Duration `mapstructure:"refresh_token_expired_in"`
+	RefreshTokenMaxAge    int64         `mapstructure:"refresh_token_max_age"`
 
 	// redis information
 	ClientOrigin string `mapstructure:"client_origin"`

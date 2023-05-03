@@ -1,11 +1,11 @@
 package helper
 
 type APIResponse struct {
-	Code      int
-	Status    string
-	Message   string
-	ErrorCode string
-	Data      interface{}
+	Code      int         `json:"-"`
+	Status    string      `json:"status,omitempty"`
+	Message   string      `json:"message,omitempty"`
+	ErrorCode string      `json:"errorCode,omitempty"`
+	Data      interface{} `json:"data,omitempty"`
 }
 
 type apiStatusEnum struct {

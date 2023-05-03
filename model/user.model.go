@@ -21,6 +21,8 @@ type User struct {
 	RefreshToken   string                 `json:"-" bson:"refresh_token,omitempty"`
 	Status         enum.UserStatusValue   `json:"status,omitempty" bson:"status,omitempty"`
 	Provider       enum.ProviderNameValue `json:"provider,omitempty" bson:"provider,omitempty"`
+	Bio            *string                `json:"bio,omitempty" bson:"bio,omitempty"`
+	Avatar         *string                `json:"avatar,omitempty" bson:"avatar,omitempty"`
 
 	// for fe view
 	AccessToken string `json:"accessToken,omitempty" bson:"-"`

@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"encoding/base64"
 	"fmt"
 	"realworld-authentication/utils"
 	"time"
@@ -15,7 +14,7 @@ type TokenDetails struct {
 	ExpiredIn *int64
 }
 
-func GenerateJWT(userId string, ttl time.Duration, privateKey string) (*TokenDetails, error) {
+func GenerateJWT(userId string, ttl time.Duration, tokenKey string) (*TokenDetails, error) {
 	// gen access token
 
 	expirationTime := time.Now().Add(ttl).Unix()
@@ -24,46 +23,27 @@ func GenerateJWT(userId string, ttl time.Duration, privateKey string) (*TokenDet
 		ExpiredIn: &expirationTime,
 	}
 
-	decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
-	if err != nil {
-		return nil, fmt.Errorf("could not decode token private key: %w", err)
-	}
-
-	key, err := jwt.ParseRSAPrivateKeyFromPEM(decodedPrivateKey)
-	if err != nil {
-		return nil, fmt.Errorf("create parse token private key error: %w", err)
-	}
-
 	now := utils.GetCurrentTimeZoneVN()
 	atClaims := make(jwt.MapClaims)
 	atClaims["sub"] = tokenDetails.UserID
 	atClaims["exp"] = tokenDetails.ExpiredIn
 	atClaims["iat"] = now.Unix()
 
-	*tokenDetails.Token, err = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims).SignedString(key)
+	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims).SignedString([]byte(tokenKey))
 	if err != nil {
 		return nil, fmt.Errorf("create sign token: %w", err)
 	}
 
+	tokenDetails.Token = &tokenString
 	return tokenDetails, nil
 }
 
-func ValidateToken(token string, publicKey string) (*TokenDetails, error) {
-	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
-	if err != nil {
-		return nil, fmt.Errorf("could not decode public key: %w", err)
-	}
-
-	key, err := jwt.ParseRSAPublicKeyFromPEM(decodedPublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("validate: parse key: %w", err)
-	}
-
+func ValidateToken(token string, tokenKey string) (*TokenDetails, error) {
 	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected method: %s", t.Header["alg"])
 		}
-		return key, nil
+		return tokenKey, nil
 	})
 
 	if err != nil {

@@ -16,9 +16,9 @@ type userLoginResponse struct {
 
 func NewUserLoginResp(u *model.User) *userLoginResponse {
 	resp := new(userLoginResponse)
-	resp.User.AccessToken = u.AccessToken
 	resp.User.Email = u.Email
 	resp.User.Username = u.Username
+	resp.User.AccessToken = u.AccessToken
 	return resp
 }
 

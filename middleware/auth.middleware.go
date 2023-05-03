@@ -18,7 +18,7 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusUnauthorized, err)
 		}
 
-		claims, err := helper.ValidateToken(token, config.AppConfig.AccessTokenPublicKey)
+		claims, err := helper.ValidateToken(token, config.AppConfig.AccessTokenKey)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 		}

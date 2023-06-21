@@ -1,6 +1,6 @@
-package dto
+package auth
 
-type UserSignUpRequest struct {
+type UserSignUpDto struct {
 	User struct {
 		Email    string `json:"email" validate:"required"`
 		Username string `json:"username" validate:"required"`

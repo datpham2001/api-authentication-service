@@ -1,4 +1,4 @@
-package config
+package env
 
 import (
 	"fmt"
@@ -29,6 +29,12 @@ type appConfig struct {
 	GoogleOauthClientID    string `mapstructure:"google_oauth_client_id"`
 	GoogleOauthSecret      string `mapstructure:"google_oauth_secret"`
 	GoogleOauthRedirectUrl string `mapstructure:"google_oauth_redirect_url"`
+
+	// AWS Service
+	AWSRegion      string `mapstructure:"aws_region"`
+	AWSAccessKeyID string `mapstructure:"aws_access_key_id"`
+	AWSSecretKey   string `mapstructure:"aws_secret_key"`
+	AWSBucketName  string `mapstructure:"aws_bucket_name"`
 }
 
 var (

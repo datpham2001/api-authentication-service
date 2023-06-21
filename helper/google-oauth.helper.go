@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"realworld-authentication/config"
+	"realworld-authentication/config/env"
 	"time"
 )
 
@@ -29,9 +29,9 @@ func GetGoogleOauthToken(code string) (*GoogleOauthToken, error) {
 	values := url.Values{}
 	values.Add("grant_type", "authorization_code")
 	values.Add("code", code)
-	values.Add("client_id", config.AppConfig.GoogleOauthClientID)
-	values.Add("client_secret", config.AppConfig.GoogleOauthSecret)
-	values.Add("redirect_uri", config.AppConfig.GoogleOauthRedirectUrl)
+	values.Add("client_id", env.AppConfig.GoogleOauthClientID)
+	values.Add("client_secret", env.AppConfig.GoogleOauthSecret)
+	values.Add("redirect_uri", env.AppConfig.GoogleOauthRedirectUrl)
 
 	query := values.Encode()
 
@@ -82,7 +82,7 @@ func GetGoogleUserInfo(accessToken, tokenID string) (*GoogleUserInfo, error) {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer &s", tokenID))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenID))
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}

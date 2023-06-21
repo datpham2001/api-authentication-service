@@ -1,5 +1,5 @@
-package dto
+package auth
 
-type RefreshTokenRequest struct {
+type RefreshTokenRequestDto struct {
 	RefreshToken string `form:"refreshToken" binding:"required"`
 }

@@ -16,8 +16,7 @@ type TokenDetails struct {
 
 func GenerateJWT(userId string, ttl time.Duration, tokenKey string) (*TokenDetails, error) {
 	// gen access token
-
-	expirationTime := time.Now().Add(ttl).Unix()
+	expirationTime := time.Now().Add(ttl * time.Minute).Unix()
 	tokenDetails := &TokenDetails{
 		UserID:    userId,
 		ExpiredIn: &expirationTime,
@@ -40,10 +39,10 @@ func GenerateJWT(userId string, ttl time.Duration, tokenKey string) (*TokenDetai
 
 func ValidateToken(token string, tokenKey string) (*TokenDetails, error) {
 	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected method: %s", t.Header["alg"])
 		}
-		return tokenKey, nil
+		return []byte(tokenKey), nil
 	})
 
 	if err != nil {

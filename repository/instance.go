@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
-	"realworld-authentication/helper"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -88,16 +88,12 @@ func (m *Instance) interfaceSlice(slice interface{}) ([]interface{}, error) {
 	return ret, nil
 }
 
-func (m *Instance) parseSingleResult(result *mongo.SingleResult, action string) *helper.APIResponse {
+func (m *Instance) parseSingleResult(result *mongo.SingleResult, action string) (interface{}, error) {
 	// parse result
 	obj := m.newObject()
 	err := result.Decode(obj)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Error,
-			Message:   "DB Error: " + err.Error(),
-			ErrorCode: "MAP_OBJECT_FAILED",
-		}
+		return nil, err
 	}
 
 	// put to slice
@@ -105,30 +101,19 @@ func (m *Instance) parseSingleResult(result *mongo.SingleResult, action string) 
 	listValue := reflect.Append(reflect.ValueOf(list),
 		reflect.Indirect(reflect.ValueOf(obj)))
 
-	return &helper.APIResponse{
-		Status:  helper.APIStatus.Ok,
-		Message: action + " " + m.ColName + " successfully.",
-		Data:    listValue.Interface(),
-	}
+	return listValue.Interface(), nil
 }
 
-func (m *Instance) Create(ent interface{}) *helper.APIResponse {
+func (m *Instance) Create(ent interface{}) (interface{}, error) {
 	// check col
 	if m.coll == nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: Collection " + m.ColName + " is not init.",
-		}
+		return nil, fmt.Errorf("%v is not inited", m.ColName)
 	}
 
 	// convert to bson
 	obj, err := m.convertToBson(ent)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Error,
-			Message:   "DB Error: " + err.Error(),
-			ErrorCode: "MAP_OBJECT_FAILED",
-		}
+		return nil, err
 	}
 
 	// init time
@@ -139,10 +124,7 @@ func (m *Instance) Create(ent interface{}) *helper.APIResponse {
 	// insert
 	result, err := m.coll.InsertOne(context.TODO(), obj)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB Error: " + err.Error(),
-		}
+		return nil, err
 	}
 
 	obj["_id"] = result.InsertedID
@@ -152,30 +134,20 @@ func (m *Instance) Create(ent interface{}) *helper.APIResponse {
 	listValue := reflect.Append(reflect.ValueOf(list),
 		reflect.Indirect(reflect.ValueOf(ent)))
 
-	return &helper.APIResponse{
-		Status:  helper.APIStatus.Ok,
-		Message: "Create " + m.ColName + " successfully.",
-		Data:    listValue.Interface(),
-	}
+	return listValue.Interface(), nil
 }
 
 // CreateMany insert many object into db
-func (m *Instance) CreateMany(entityList interface{}) *helper.APIResponse {
+func (m *Instance) CreateMany(entityList interface{}) (interface{}, error) {
 
 	// check col
 	if m.coll == nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: Create many - Collection " + m.ColName + " is not init.",
-		}
+		return nil, fmt.Errorf("%v is not inited", m.ColName)
 	}
 
 	list, err := m.interfaceSlice(entityList)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: Create many - Invalid slice.",
-		}
+		return nil, err
 	}
 
 	var bsonList []interface{}
@@ -183,10 +155,7 @@ func (m *Instance) CreateMany(entityList interface{}) *helper.APIResponse {
 	for _, item := range list {
 		b, err := m.convertToBson(item)
 		if err != nil {
-			return &helper.APIResponse{
-				Status:  helper.APIStatus.Error,
-				Message: "DB error: Create many - Invalid bson object.",
-			}
+			return nil, err
 		}
 		if b["created_time"] == nil {
 			b["created_time"] = now
@@ -196,48 +165,30 @@ func (m *Instance) CreateMany(entityList interface{}) *helper.APIResponse {
 
 	result, err := m.coll.InsertMany(context.TODO(), bsonList)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Error,
-			Message:   "DB Error: " + err.Error(),
-			ErrorCode: "CREATE_FAILED",
-		}
+		return nil, err
 	}
 
-	return &helper.APIResponse{
-		Status:  helper.APIStatus.Ok,
-		Message: "Create " + m.ColName + "(s) successfully.",
-		Data:    result.InsertedIDs,
-	}
+	return result.InsertedIDs, nil
 }
 
 // UpdateOne Update one matched object.
-func (m *Instance) UpdateOne(query interface{}, updater interface{}, opts ...*options.FindOneAndUpdateOptions) *helper.APIResponse {
+func (m *Instance) UpdateOne(query interface{}, updater interface{}, opts ...*options.FindOneAndUpdateOptions) (interface{}, error) {
 	// check col
 	if m.coll == nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: Collection " + m.ColName + " is not init.",
-		}
+		return nil, fmt.Errorf("%v is not inited", m.ColName)
 	}
 
 	// convert
 	bUpdater, err := m.convertToBson(updater)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Error,
-			Message:   "DB Error: " + err.Error(),
-			ErrorCode: "MAP_OBJECT_FAILED",
-		}
+		return nil, err
 	}
 	bUpdater["last_updated_time"] = time.Now()
 
 	// transform to bson
 	converted, err := m.convertToBson(query)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: UpdateOne - Cannot convert object - " + err.Error(),
-		}
+		return nil, err
 	}
 
 	// do update
@@ -255,24 +206,17 @@ func (m *Instance) UpdateOne(query interface{}, updater interface{}, opts ...*op
 		if result != nil {
 			detail = result.Err().Error()
 		}
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Notfound,
-			Message:   "Not found any matched " + m.ColName + ". Error detail: " + detail,
-			ErrorCode: "NOT_FOUND",
-		}
+		return nil, errors.New(detail)
 	}
 
 	return m.parseSingleResult(result, "UpdateOne")
 }
 
 // Query Get all object in DB
-func (m *Instance) Query(query interface{}, offset int64, limit int64, sortFields *bson.M) *helper.APIResponse {
+func (m *Instance) Query(query interface{}, offset int64, limit int64, sortFields *bson.M) (interface{}, error) {
 	// check col
 	if m.coll == nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: Collection " + m.ColName + " is not init.",
-		}
+		return nil, fmt.Errorf("%v is not inited", m.ColName)
 	}
 	opt := &options.FindOptions{}
 	k := int64(1000)
@@ -291,104 +235,64 @@ func (m *Instance) Query(query interface{}, offset int64, limit int64, sortField
 	// transform to bson
 	converted, err := m.convertToBson(query)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: QueryOne - Cannot convert object - " + err.Error(),
-		}
+		return nil, err
 	}
 
 	result, err := m.coll.Find(context.TODO(), converted, opt)
 
 	if err != nil || result.Err() != nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Notfound,
-			Message:   "Not found any matched " + m.ColName + ".",
-			ErrorCode: "NOT_FOUND",
-		}
+		return nil, err
 	}
 
 	list := m.newList(int(limit))
 	err = result.All(context.TODO(), &list)
 	result.Close(context.TODO())
 	if err != nil || reflect.ValueOf(list).Len() == 0 {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Notfound,
-			Message:   "Not found any matched " + m.ColName + ".",
-			ErrorCode: "NOT_FOUND",
-		}
+		return nil, err
 	}
 
-	return &helper.APIResponse{
-		Status:  helper.APIStatus.Ok,
-		Message: "Query " + m.ColName + " successfully.",
-		Data:    list,
-	}
+	return list, nil
 }
 
 // Query Get all object in DB
-func (m *Instance) QueryAll() *helper.APIResponse {
+func (m *Instance) QueryAll() (interface{}, error) {
 	// check col
 	if m.coll == nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Error,
-			Message:   "DB error: Collection " + m.ColName + " is not init.",
-			ErrorCode: "NOT_INIT_YET",
-		}
+		return nil, fmt.Errorf("%v is not inited", m.ColName)
 	}
 	rs, err := m.coll.Find(context.TODO(), bson.M{})
 	if err != nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Notfound,
-			Message:   "Not found any " + m.ColName + ".",
-			ErrorCode: "NOT_FOUND",
-		}
+		return nil, err
 	}
 
 	list := m.newList(1000)
 	rs.All(context.TODO(), &list)
 	rs.Close(context.TODO())
 	if reflect.ValueOf(list).Len() == 0 {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Notfound,
-			Message:   "Not found any matched " + m.ColName + ".",
-			ErrorCode: "NOT_FOUND",
-		}
+		return nil, err
 	}
-	return &helper.APIResponse{
-		Status:  helper.APIStatus.Ok,
-		Message: "Query " + m.ColName + " successfully.",
-		Data:    list,
-	}
+
+	return list, nil
 }
 
 // QueryOne ...
-func (m *Instance) QueryOne(query interface{}) *helper.APIResponse {
+func (m *Instance) QueryOne(query interface{}) (interface{}, error) {
 	// check col
 	if m.coll == nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: Collection " + m.ColName + " is not init.",
-		}
+		return nil, fmt.Errorf("%v is not inited", m.ColName)
 	}
 
 	// transform to bson
 	converted, err := m.convertToBson(query)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: QueryOne - Cannot convert object - " + err.Error(),
-		}
+		return nil, err
 	}
 
 	// do find
 	result := m.coll.FindOne(context.TODO(), converted)
 
 	if result == nil || result.Err() != nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Notfound,
-			Message:   "Not found any matched " + m.ColName + ".",
-			ErrorCode: "NOT_FOUND",
-		}
+		return nil, errors.New("document is not existed")
 	}
 
 	return m.parseSingleResult(result, "Query")
@@ -404,37 +308,42 @@ func (m *Instance) CreateIndex(keys bson.D, options *options.IndexOptions) error
 }
 
 // Count Count object which matched with query.
-func (m *Instance) Count(query interface{}) *helper.APIResponse {
+func (m *Instance) Count(query interface{}) (interface{}, error) {
 	// check col
 	if m.coll == nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: Collection " + m.ColName + " is not init.",
-		}
+		return nil, fmt.Errorf("%v is not inited", m.ColName)
 	}
 
 	// convert query
 	converted, err := m.convertToBson(query)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:  helper.APIStatus.Error,
-			Message: "DB error: Count - Cannot convert object - " + err.Error(),
-		}
+		return nil, err
 	}
 
 	count, err := m.coll.CountDocuments(context.TODO(), converted)
 	if err != nil {
-		return &helper.APIResponse{
-			Status:    helper.APIStatus.Error,
-			Message:   "Count error: " + err.Error(),
-			ErrorCode: "COUNT_FAILED",
-		}
+		return nil, err
 	}
 
-	return &helper.APIResponse{
-		Status:  helper.APIStatus.Ok,
-		Message: "Count query executed successfully.",
-		Data:    count,
+	return count, nil
+}
+
+func (m *Instance) DeleteOne(query interface{}) error {
+	// check col
+	if m.coll == nil {
+		return fmt.Errorf("%v is not inited", m.ColName)
 	}
 
+	// convert query
+	converted, err := m.convertToBson(query)
+	if err != nil {
+		return err
+	}
+
+	_, err = m.coll.DeleteOne(context.TODO(), converted)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

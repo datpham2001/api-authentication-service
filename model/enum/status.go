@@ -1,5 +1,10 @@
 package enum
 
+var (
+	TRUE  = true
+	FALSE = false
+)
+
 type UserStatusValue string
 
 type userStatusEnum struct {

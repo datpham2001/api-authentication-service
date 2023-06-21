@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"realworld-authentication/config"
+	"realworld-authentication/config/env"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,7 +17,7 @@ var (
 )
 
 func ConnectDB() {
-	if Client, dbErr = mongo.NewClient(options.Client().ApplyURI(config.AppConfig.MongoURI)); dbErr != nil {
+	if Client, dbErr = mongo.NewClient(options.Client().ApplyURI(env.AppConfig.MongoURI)); dbErr != nil {
 		log.Fatal(dbErr)
 	}
 

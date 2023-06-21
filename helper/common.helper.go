@@ -1,7 +1,6 @@
 package helper
 
 type APIResponse struct {
-	Code      int         `json:"-"`
 	Status    string      `json:"status,omitempty"`
 	Message   string      `json:"message,omitempty"`
 	ErrorCode string      `json:"errorCode,omitempty"`
